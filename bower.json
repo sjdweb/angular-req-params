@@ -1,0 +1,12 @@
+{
+    "name": "angular-req-params",
+    "version": "0.0.1",
+    "dependencies": {
+    	"jquery": "latest",
+        "angular": "latest"
+    },
+    "devDependencies": {
+        "angular-mocks": "latest",
+        "underscore": "latest"
+    }
+}
