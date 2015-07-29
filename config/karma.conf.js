@@ -9,7 +9,6 @@ module.exports = function(config) {
       'libs/jquery/dist/jquery.js',
       'libs/angular/angular.js',
       'libs/angular-mocks/angular-mocks.js',
-      'libs/underscore/underscore.js',
       'app/**/*.js',
       'tests/**/*.js'
     ],

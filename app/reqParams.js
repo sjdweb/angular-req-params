@@ -1,14 +1,10 @@
 angular.module('reqParams', []).factory('reqParams', function() {
-    return function ($scope, params, ifPresent, mustHaveOne) {
-
-        if(!params) {
-            params = [];
-        }
+    return function ($scope) {
 
         function deepFind(obj, path) {
             var paths = path.split('.'),
-                current = obj,
-                i;
+            current = obj,
+            i;
 
             for (i = 0; i < paths.length; ++i) {
                 if (current[paths[i]] === undefined) {
@@ -21,44 +17,60 @@ angular.module('reqParams', []).factory('reqParams', function() {
             return current;
         }
 
-        var paramMissingFromScope = function (p) {
+        function hasAny(arr) {
+            return arr && arr.some(function(i) { return i !== undefined; });
+        }
+
+        function paramMissingFromScope(p) {
             return deepFind($scope, p) === undefined;
-        };
+        }
 
-        var any = params.filter(paramMissingFromScope);
+        function convertStringToArray(p) {
+            return p instanceof Array ? p : [p];
+        }
 
-        var anyBecauseOf = [];
-        for (var prop in ifPresent) {
-            if (!paramMissingFromScope(prop)) {
-                var notPresent = ifPresent[prop].filter(paramMissingFromScope);
+        function validate(results) {
+            if(hasAny(results)) {
+                var missingParams = '';
 
-                anyBecauseOf = anyBecauseOf.concat(notPresent);
+                var processList = function(list) {
+                    missingParams += (missingParams.length > 0 ? ' ' : '') +  list.join(', ');
+                };
+
+                processList(results);
+
+                throw new Error('Missing required params: ' + missingParams);
             }
         }
 
-        var anyHasOneOf = [];
-        if (_.any(mustHaveOne)) {
-            mustHaveOne.forEach(function(mho) {
-                var allAreMissing = mho.every(paramMissingFromScope);
+        this.has = function(params) {
+            var anyMissing = convertStringToArray(params).filter(paramMissingFromScope);
+            validate(anyMissing);
+            return this;
+        };
 
-                if (allAreMissing) {
-                    anyHasOneOf = anyHasOneOf.concat('One of: ' + mho.join(', '));
-                }
-            });
-        }
+        this.hasWhen = function(ifPresent, hasThese) {
+            if (!paramMissingFromScope(ifPresent)) {
+                var notPresent = convertStringToArray(hasThese).filter(paramMissingFromScope);
+                validate(notPresent);
+            }
 
-        if (_.any(any) || _.any(anyBecauseOf) || _.any(anyHasOneOf)) {
-            var missingParams = '';
+            return this;
+        };
 
-            var processList = function(list) {
-                missingParams += (missingParams.length > 0 ? ' ' : '') +  list.join(', ');
-            };
+        this.hasOne = function(hasOneOf) {
+            var allAreMissing = hasOneOf.every(paramMissingFromScope);
 
-            processList(any);
-            processList(anyBecauseOf);
-            processList(anyHasOneOf);
+            var anyHasOneOf = [];
+            if (allAreMissing) {
+                anyHasOneOf = anyHasOneOf.concat('One of: ' + hasOneOf.join(', '));
+            }
 
-            throw new Error('Missing required params: ' + missingParams);
-        }
+            validate(anyHasOneOf);
+
+            return this;
+        };
+
+        return this;
     };
 });
